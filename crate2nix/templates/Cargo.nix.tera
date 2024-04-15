@@ -136,10 +136,14 @@ rec {
           else {{crate.source.LocalDirectory.path | safe}};
         {%- elif crate.source.Git %}
         workspace_member = null;
+        {%- if crate.source.Git.is_ssh %}
+        src = builtins.fetchGit {
+        {%- else %}
         src = pkgs.fetchgit {
+        {%- endif %}
           url = {{crate.source.Git.url}};
           rev = {{crate.source.Git.rev}};
-          {%- if crate.source.Git.sha256 %}
+          {%- if crate.source.Git.sha256 and not crate.source.Git.is_ssh %}
           sha256 = {{ crate.source.Git.sha256 }};
           {%- endif %}
         };
