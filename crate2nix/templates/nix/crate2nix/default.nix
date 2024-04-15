@@ -284,17 +284,18 @@
           }
         );
       # Memoize built packages so that reappearing packages are only built once.
-      builtByPackageIdByPkgs = mkBuiltByPackageIdByPkgs pkgs;
-      mkBuiltByPackageIdByPkgs = pkgs: let
+      builtByPackageIdByPkgs = mkBuiltByPackageIdByPkgs false pkgs;
+      mkBuiltByPackageIdByPkgs = isTargetBuild: pkgs: let
         self = {
+          inherit isTargetBuild;
           crates = lib.mapAttrs (packageId: value: buildByPackageIdForPkgsImpl self pkgs packageId) crateConfigs;
           target = makeTarget stdenv.hostPlatform;
-          build = mkBuiltByPackageIdByPkgs pkgs.buildPackages;
+          build = mkBuiltByPackageIdByPkgs true pkgs.buildPackages;
         };
       in
         self;
       buildByPackageIdForPkgsImpl = self: pkgs: packageId: let
-        isTargetBuild = crateConfigs.${packageId}.procMacro or false;
+        isTargetBuild = self.isTargetBuild or crateConfigs.${packageId}.procMacro or false;
         features = mergedFeatures."${packageId}" or [];
         crateConfig' = crateConfigs."${packageId}";
         crateConfig =
