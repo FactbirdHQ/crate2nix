@@ -14,6 +14,7 @@
 , rootFeatures ? [ ]
 , targetFeatures ? [ ]
 , release ? true
+, workspaceRoot ? null
 }:
 rec {
   # #}
@@ -369,7 +370,10 @@ rec {
                 );
                 extraRustcOpts = lib.lists.optional (targetFeatures != [ ]) "-C target-feature=${lib.concatMapStringsSep "," (x: "+${x}") targetFeatures}";
                 inherit features dependencies buildDependencies crateRenames release isTargetBuild;
-              }
+              } // (if (!(builtins.isNull workspaceRoot) && crateConfig.isWorkspaceMember) then {
+                src = workspaceRoot;
+                workspace_member = null;
+              } else {})
             );
       in
       builtByPackageIdByPkgs;
