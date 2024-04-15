@@ -370,6 +370,7 @@ impl From<crate::config::Source> for ResolvedSource {
     fn from(source: crate::config::Source) -> Self {
         match source {
             crate::config::Source::Git { url, rev, sha256 } => ResolvedSource::Git(GitSource {
+                is_ssh: &url.scheme().to_lowercase() == "ssh",
                 url,
                 rev,
                 r#ref: None,
@@ -402,6 +403,7 @@ pub struct CratesIoSource {
 pub struct GitSource {
     pub url: Url,
     pub rev: String,
+    pub is_ssh: bool,
     pub r#ref: Option<String>,
     pub sha256: Option<String>,
 }
@@ -479,6 +481,7 @@ impl ResolvedSource {
         url.set_query(None);
         url.set_fragment(None);
         Ok(ResolvedSource::Git(GitSource {
+            is_ssh: &url.scheme().to_lowercase() == "ssh",
             url,
             rev,
             r#ref: branch,

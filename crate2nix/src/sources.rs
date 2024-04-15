@@ -38,6 +38,7 @@ pub fn git_io_source(url: Url, rev: String) -> Result<config::Source, Error> {
     let prefetchable = GitSource {
         url: url.clone(),
         rev: rev.clone(),
+        is_ssh: url.scheme().to_lowercase() == "ssh",
         r#ref: None,
         sha256: None,
     };
