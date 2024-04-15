@@ -272,18 +272,20 @@ rec {
             }
           );
         # Memoize built packages so that reappearing packages are only built once.
-        builtByPackageIdByPkgs = mkBuiltByPackageIdByPkgs pkgs;
-        mkBuiltByPackageIdByPkgs = pkgs:
+        builtByPackageIdByPkgs = mkBuiltByPackageIdByPkgs false pkgs;
+        mkBuiltByPackageIdByPkgs = isTargetBuild: pkgs:
           let
             self = {
+              inherit isTargetBuild;
               crates = lib.mapAttrs (packageId: value: buildByPackageIdForPkgsImpl self pkgs packageId) crateConfigs;
-              target = makeTarget pkgs.stdenv.hostPlatform;
-              build = mkBuiltByPackageIdByPkgs pkgs.buildPackages;
+              target = makeTarget stdenv.hostPlatform;
+              build = mkBuiltByPackageIdByPkgs true pkgs.buildPackages;
             };
           in
           self;
         buildByPackageIdForPkgsImpl = self: pkgs: packageId:
           let
+            isTargetBuild = self.isTargetBuild or crateConfigs.${packageId}.procMacro or false;
             features = mergedFeatures."${packageId}" or [ ];
             crateConfig' = crateConfigs."${packageId}";
             crateConfig =
@@ -366,7 +368,7 @@ rec {
                   }
                 );
                 extraRustcOpts = lib.lists.optional (targetFeatures != [ ]) "-C target-feature=${lib.concatMapStringsSep "," (x: "+${x}") targetFeatures}";
-                inherit features dependencies buildDependencies crateRenames release;
+                inherit features dependencies buildDependencies crateRenames release isTargetBuild;
               }
             );
       in
