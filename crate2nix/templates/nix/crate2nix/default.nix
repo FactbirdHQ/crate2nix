@@ -180,9 +180,11 @@ rec {
       }
       (lib.optionalString (stdenv.buildPlatform.canExecute stdenv.hostPlatform) ''
         echo tested by ${test}
-      '' + ''
-        ${lib.concatMapStringsSep "\n" (output: "ln -s ${crate.${output}} ${"$"}${output}") crate.outputs}
-      '');
+      '' 
+      #+ ''
+      #  ${lib.concatMapStringsSep "\n" (output: "ln -s ${crate.${output}} ${"$"}${output}") crate.outputs}
+      #''
+      );
 
   /* A restricted overridable version of builtRustCratesWithFeatures. */
   buildRustCrateWithFeatures =
