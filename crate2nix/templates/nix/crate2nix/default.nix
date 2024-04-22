@@ -180,11 +180,9 @@ rec {
       }
       (lib.optionalString (stdenv.buildPlatform.canExecute stdenv.hostPlatform) ''
         echo tested by ${test}
-      '' 
-      #+ ''
-      #  ${lib.concatMapStringsSep "\n" (output: "ln -s ${crate.${output}} ${"$"}${output}") crate.outputs}
-      #''
-      );
+      '' + ''
+        ${lib.concatMapStringsSep "\n" (output: "ln -s ${crate.${output}} ${"$"}${output}") crate.outputs}
+      '');
 
   /* A restricted overridable version of builtRustCratesWithFeatures. */
   buildRustCrateWithFeatures =
@@ -267,6 +265,7 @@ rec {
       assert (builtins.isBool runTests);
       let
         rootPackageId = packageId;
+        runTestsForPackage = runTests && packageId == rootPackageId;
         mergedFeatures = mergePackageFeatures
           (
             args // {
@@ -295,7 +294,7 @@ rec {
               builtins.removeAttrs crateConfig' [ "resolvedDefaultFeatures" "devDependencies" ];
             devDependencies =
               lib.optionals
-                (runTests && packageId == rootPackageId)
+                runTestsForPackage
                 (crateConfig'.devDependencies or [ ]);
             dependencies =
               dependencyDerivations {
@@ -507,6 +506,7 @@ rec {
       assert (builtins.isAttrs target);
       assert (builtins.isBool runTests);
       let
+        runTestsForPackage = runTests && packageId == rootPackageId;
         crateConfig = crateConfigs."${packageId}" or (builtins.throw "Package not found: ${packageId}");
         expandedFeatures = expandFeatures (crateConfig.features or { }) features;
         enabledFeatures = enableFeatures (crateConfig.dependencies or [ ]) expandedFeatures;
@@ -540,7 +540,8 @@ rec {
                   mergePackageFeatures {
                     features = combinedFeatures;
                     featuresByPackageId = cache;
-                    inherit crateConfigs packageId target runTests rootPackageId;
+                    runTests = runTestsForPackage;
+                    inherit crateConfigs packageId target rootPackageId;
                   }
             );
         cacheWithSelf =
@@ -556,7 +557,7 @@ rec {
             (
               crateConfig.dependencies or [ ]
               ++ lib.optionals
-                (runTests && packageId == rootPackageId)
+                runTestsForPackage
                 (crateConfig.devDependencies or [ ])
             );
         cacheWithAll =
