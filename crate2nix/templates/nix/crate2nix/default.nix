@@ -150,7 +150,8 @@ rec {
           ${pkgs.buildPackages.xorg.lndir}/bin/lndir ${crate.src}
 
           # build outputs
-          testRoot=target/debug
+          workspaceRoot=$(pwd)
+          testRoot="$workspaceRoot/target/debug"
           mkdir -p $testRoot
 
           # executables of the crate
