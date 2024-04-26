@@ -135,7 +135,8 @@ rec {
             export RUST_BACKTRACE=1
 
             # build outputs
-            testRoot=target/debug
+            workspaceRoot=$(pwd)
+            testRoot="$workspaceRoot/target/debug"
             mkdir -p $testRoot
 
             # executables of the crate
@@ -355,7 +356,7 @@ rec {
               } // (if (!(builtins.isNull workspaceRoot) && crateConfig.isWorkspaceMember) then {
                 src = workspaceRoot;
                 workspace_member = null;
-              } else {})
+              } else { })
             );
       in
       builtByPackageIdByPkgs;
