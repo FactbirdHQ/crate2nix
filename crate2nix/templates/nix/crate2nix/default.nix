@@ -266,29 +266,45 @@ rec {
       assert (builtins.isBool runTests);
       let
         rootPackageId = packageId;
-        mergedFeatures = mergePackageFeatures
+        mergedFeatures = {
+          isTargetBuild,
+          stdenv
+        }: let
+          platform = if isTargetBuild then stdenv.buildPlatform else stdenv.targetPlatform;
+        in
+          mergePackageFeatures
           (
             args // {
               inherit rootPackageId;
-              target = makeTarget stdenv.hostPlatform // { test = runTests; };
+              target = makeTarget platform // { test = runTests; };
             }
           );
         # Memoize built packages so that reappearing packages are only built once.
-        builtByPackageIdByPkgs = mkBuiltByPackageIdByPkgs false pkgs;
-        mkBuiltByPackageIdByPkgs = isTargetBuild: pkgs:
-          let
-            self = {
-              inherit isTargetBuild;
-              crates = lib.mapAttrs (packageId: value: buildByPackageIdForPkgsImpl self pkgs packageId) crateConfigs;
-              target = makeTarget stdenv.hostPlatform;
-              build = mkBuiltByPackageIdByPkgs true pkgs.buildPackages;
+        builtByPackageIdByPkgs = mkBuiltByPackageIdByPkgs {
+          inherit stdenv;
+          isTargetBuild = false;
+        };
+        mkBuiltByPackageIdByPkgs = {
+          isTargetBuild,
+          stdenv
+        }: let
+          platform = if isTargetBuild then stdenv.buildPlatform else stdenv.targetPlatform;
+          self = {
+            inherit isTargetBuild;
+            crates = lib.mapAttrs (packageId: value: buildByPackageIdForPkgsImpl self pkgs packageId) crateConfigs;
+            target = makeTarget platform;
+            build = mkBuiltByPackageIdByPkgs {
+              inherit stdenv;
+              isTargetBuild = true;
             };
-          in
+          };
+        in
           self;
         buildByPackageIdForPkgsImpl = self: pkgs: packageId:
           let
-            isTargetBuild = self.isTargetBuild or crateConfigs.${packageId}.procMacro or false;
-            features = mergedFeatures."${packageId}" or [ ];
+            isProcMacro = crateConfig.${packageId}.procMacro or false;
+            isTargetBuild = self.isTargetBuild or isProcMacro;
+            features = (mergedFeatures {inherit isTargetBuild stdenv;})."${packageId}" or [ ];
             crateConfig' = crateConfigs."${packageId}";
             crateConfig =
               builtins.removeAttrs crateConfig' [ "resolvedDefaultFeatures" "devDependencies" ];
@@ -370,7 +386,7 @@ rec {
                   }
                 );
                 extraRustcOpts = lib.lists.optional (targetFeatures != [ ]) "-C target-feature=${lib.concatMapStringsSep "," (x: "+${x}") targetFeatures}";
-                inherit features dependencies buildDependencies crateRenames release isTargetBuild;
+                inherit features dependencies buildDependencies crateRenames release isTargetBuild isProcMacro;
               } // (if (!(builtins.isNull workspaceRoot) && crateConfig.isWorkspaceMember) then {
                 src = workspaceRoot;
                 workspace_member = null;
