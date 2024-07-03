@@ -44,7 +44,7 @@ rec {
     stdenv.mkDerivation {
       name = "${name}-crate2nix";
 
-      buildInputs = [ pkgs.cargo pkgs.jq pkgs.nix-prefetch-git crate2nix ];
+      buildInputs = [ pkgs.cargo pkgs.jq pkgs.nix-prefetch-git pkgs.cacert crate2nix ];
       preferLocalBuild = true;
 
       inherit src;
