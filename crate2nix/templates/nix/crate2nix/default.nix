@@ -294,6 +294,7 @@
       in
         self;
       buildByPackageIdForPkgsImpl = self: pkgs: packageId: let
+        isTargetBuild = crateConfigs.${packageId}.procMacro or false;
         features = mergedFeatures."${packageId}" or [];
         crateConfig' = crateConfigs."${packageId}";
         crateConfig =
@@ -373,7 +374,7 @@
                 }
               );
             extraRustcOpts = lib.lists.optional (targetFeatures != []) "-C target-feature=${lib.concatMapStringsSep "," (x: "+${x}") targetFeatures}";
-            inherit features dependencies buildDependencies crateRenames release;
+            inherit features dependencies buildDependencies crateRenames release isTargetBuild;
           }
         );
     in
