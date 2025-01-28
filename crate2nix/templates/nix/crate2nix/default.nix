@@ -289,7 +289,11 @@
         self = {
           inherit isTargetBuild;
           crates = lib.mapAttrs (packageId: value: buildByPackageIdForPkgsImpl self pkgs packageId) crateConfigs;
-          target = makeTarget stdenv.hostPlatform;
+          target = makeTarget (
+            if isTargetBuild
+            then stdenv.buildPlatform
+            else stdenv.hostPlatform
+          );
           build = mkBuiltByPackageIdByPkgs true pkgs.buildPackages;
         };
       in
@@ -720,3 +724,4 @@
   #{#
 }
 # -#}
+
