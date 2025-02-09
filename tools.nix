@@ -11,12 +11,20 @@
 , strictDeprecation ? true
 }:
 let
-  cargoNix = pkgs.callPackage ./crate2nix/Cargo.nix { inherit strictDeprecation; };
+  defaultCrateOverrides = pkgs.defaultCrateOverrides // {
+    libgit2-sys = old: {
+      nativeBuildInputs = (old.nativeBuildInputs or []) ++ pkgs.libgit2.nativeBuildInputs;
+      buildInputs = (old.buildInputs or []) ++ pkgs.libgit2.buildInputs ++ [pkgs.iconv.dev pkgs.apple_sdk.frameworks.CoreFoundation];
+      propagatedBuildInputs = (old.propagatedBuildInputs or [ ]) ++ pkgs.libgit2.propagatedBuildInputs;
+    };
+  };
+
+  cargoNix = pkgs.callPackage ./crate2nix/Cargo.nix { inherit strictDeprecation defaultCrateOverrides; workspaceSrc = ./.; };
   crate2nix = cargoNix.rootCrate.build;
 in
 rec {
 
-  /* Returns a derivation containing the whole top-level function generated 
+  /* Returns a derivation containing the whole top-level function generated
     by crate2nix (`Cargo.nix`) which is typically called with `pkgs.callPackage`.
 
     name: will be part of the derivation name
@@ -44,7 +52,7 @@ rec {
     stdenv.mkDerivation {
       name = "${name}-crate2nix";
 
-      buildInputs = [ pkgs.cargo pkgs.jq crate2nix ];
+      buildInputs = [ pkgs.cargo pkgs.jq crate2nix pkgs.nix ];
       preferLocalBuild = true;
 
       inherit src;
@@ -429,9 +437,13 @@ rec {
               ''
                 mkdir -p $out
                 cp -apR ${src}/${pathToExtract}/* $out
+                cd $out
+
+                mv ./Cargo.toml ./Cargo.toml.orig
+                ${crate2nix}/bin/crate2nix resolve-manifest --cargo-toml ${src}/${pathToExtract}/Cargo.toml > ./Cargo.toml
+
                 echo '{"package":null,"files":{}}' > $out/.cargo-checksum.json
               '';
-
         };
       };
   };

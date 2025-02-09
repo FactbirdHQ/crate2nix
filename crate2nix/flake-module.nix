@@ -42,6 +42,6 @@
         };
       };
 
-      config.packages.default = pkgs.callPackage ./default.nix { };
+      # config.packages.default = pkgs.callPackage ./default.nix { };
     };
 }

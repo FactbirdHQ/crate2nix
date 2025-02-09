@@ -45,6 +45,11 @@ let
       cssparser-macros = attrs: assert builtins.trace "cssparser" true;{
         buildInputs = lib.optionals stdenv.isDarwin [ darwin.apple_sdk.frameworks.Security ];
       };
+      libgit2-sys = old: {
+        nativeBuildInputs = (old.nativeBuildInputs or []) ++ pkgs.libgit2.nativeBuildInputs;
+        buildInputs = (old.buildInputs or []) ++ pkgs.libgit2.buildInputs ++ [pkgs.iconv.dev pkgs.apple-sdk.frameworks.CoreFoundation];
+        propagatedBuildInputs = (old.propagatedBuildInputs or [ ]) ++ pkgs.libgit2.propagatedBuildInputs;
+      };
     };
   };
   set_templates = if release then "" else "--set TEMPLATES_DIR ${./templates}";

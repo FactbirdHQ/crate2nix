@@ -1,6 +1,6 @@
 {
   perSystem = { config, self', inputs', pkgs, lib, system, ... }:
-    let nodejs = pkgs.nodejs_21; in {
+    let nodejs = pkgs.nodejs_20; in {
       devshells.default = {
         commands = [
           { package = nodejs; category = "docs"; }

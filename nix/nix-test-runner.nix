@@ -5,7 +5,7 @@ in
 { pkgs ? import ./nixpkgs.nix { }
   # Use last pinned crate2nix packages to build the test runner
   # so that it works even if we have broken stuff!
-, tools ? pkgs.callPackage "${builtins.fetchTree flakeLock.nodes.crate2nix_stable.locked}/tools.nix" { }
+, tools ? pkgs.callPackage ../tools.nix { }
 }:
 let
   nixTestRunner = tools.appliedCargoNix {

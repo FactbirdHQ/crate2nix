@@ -1,6 +1,6 @@
 {
   description = ''
-    crate2nix generates [nix](https://nixos.org/nix/) build files for [rust](https://www.rust-lang.org/) 
+    crate2nix generates [nix](https://nixos.org/nix/) build files for [rust](https://www.rust-lang.org/)
     crates using [cargo](https://crates.io/).
   '';
 
