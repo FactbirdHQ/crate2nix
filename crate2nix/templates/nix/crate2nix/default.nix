@@ -284,7 +284,7 @@
           }
         );
       # Memoize built packages so that reappearing packages are only built once.
-      builtByPackageIdByPkgs = mkBuiltByPackageIdByPkgs false pkgs;
+      builtByPackageIdByPkgs = mkBuiltByPackageIdByPkgs (stdenv.buildPlatform.system == stdenv.hostPlatform.system) pkgs;
       mkBuiltByPackageIdByPkgs = isTargetBuild: pkgs: let
         self = {
           inherit isTargetBuild;
