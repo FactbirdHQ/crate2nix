@@ -5,12 +5,13 @@
 # avoid breaking the API and/or mention breakages in the CHANGELOG.
 #
 
-{ pkgs ? import ./nix/nixpkgs.nix {
-  config = { };
-  overlays = [
-    (import <rust-overlay>)
-  ];
-}
+{ rust-overlay ? ./nix/rust-overlay.nix
+, pkgs ? import ./nix/nixpkgs.nix {
+    config = { };
+    overlays = [
+      (import rust-overlay)
+    ];
+  }
 , lib ? pkgs.lib
 , stdenv ? pkgs.stdenv
 , darwin ? pkgs.darwin
@@ -30,14 +31,14 @@ let
     crateOverrides = pkgs.defaultCrateOverrides // {
       crate2nix = { src, ... }: {
         dontFixup = !release;
-        buildInputs = [ pkgs.openssl pkgs.zlib pkgs.curl] ++ lib.optionals stdenv.isDarwin [ darwin.apple_sdk.frameworks.CoreFoundation darwin.apple_sdk.frameworks.Security ];
+        buildInputs = [ pkgs.openssl pkgs.zlib pkgs.curl ] ++ lib.optionals stdenv.isDarwin [ darwin.apple_sdk.frameworks.CoreFoundation darwin.apple_sdk.frameworks.Security ];
       };
       cssparser-macros = attrs: assert builtins.trace "cssparser" true;{
         buildInputs = lib.optionals stdenv.isDarwin [ darwin.apple_sdk.frameworks.Security ];
       };
       libgit2-sys = old: {
-        nativeBuildInputs = (old.nativeBuildInputs or []) ++ pkgs.libgit2.nativeBuildInputs;
-        buildInputs = (old.buildInputs or []) ++ pkgs.libgit2.buildInputs;
+        nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ pkgs.libgit2.nativeBuildInputs;
+        buildInputs = (old.buildInputs or [ ]) ++ pkgs.libgit2.buildInputs;
         propagatedBuildInputs = (old.propagatedBuildInputs or [ ]) ++ pkgs.libgit2.propagatedBuildInputs;
       };
     };
@@ -309,10 +310,11 @@ rec {
           rec {
             name = toPackageId attrs;
             # Fetching git submodules with builtins.fetchGit is only supported in nix > 2.3
-            value = hashes.${name} or
-              (if lib.versionAtLeast builtins.nixVersion "2.4"
-              then builtins.readFile hash
-              else builtins.throw "Checksum for ${name} not found in `hashes`");
+            value =
+              hashes.${name} or
+                (if lib.versionAtLeast builtins.nixVersion "2.4"
+                then builtins.readFile hash
+                else builtins.throw "Checksum for ${name} not found in `hashes`");
           };
 
         extendedHashes = hashes

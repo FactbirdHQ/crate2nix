@@ -34,6 +34,7 @@
           darwin.apple_sdk.frameworks.Security
           curl.out
           pkg-config
+          cargo
         ];
 
         commands = with pkgs; [
@@ -59,6 +60,10 @@
           {
             name = "NIX_PATH";
             value = "nixpkgs=${inputs.nixpkgs}";
+          }
+          {
+            name = "PKG_CONFIG_PATH";
+            value = ''${pkgs.openssl.dev}/lib/pkgconfig'';
           }
         ];
 

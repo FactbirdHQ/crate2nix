@@ -3,11 +3,11 @@
     let
       flakeLock = builtins.fromJSON (builtins.readFile ../flake.lock);
     in
-      import "${builtins.fetchTree flakeLock.nodes.nixpkgs.locked}" {
-        overlays = [
-          (import <rust-overlay>)
-        ];
-      }
+    import "${builtins.fetchTree flakeLock.nodes.nixpkgs.locked}" {
+      overlays = [
+        (import "${builtins.fetchTree flakeLock.nodes.rust-overlay.locked}")
+      ];
+    }
   )
 , stdenv ? pkgs.stdenv
 , lib ? pkgs.lib
@@ -53,14 +53,14 @@ let
               inherit src;
             };
         dontFixup = !release;
-        buildInputs = [ pkgs.openssl pkgs.zlib pkgs.curl] ++ lib.optionals stdenv.isDarwin [ darwin.apple_sdk.frameworks.CoreFoundation darwin.apple_sdk.frameworks.Security ];
+        buildInputs = [ pkgs.openssl pkgs.zlib pkgs.curl ] ++ lib.optionals stdenv.isDarwin [ darwin.apple_sdk.frameworks.CoreFoundation darwin.apple_sdk.frameworks.Security ];
       };
       cssparser-macros = attrs: assert builtins.trace "cssparser" true;{
         buildInputs = lib.optionals stdenv.isDarwin [ darwin.apple_sdk.frameworks.Security ];
       };
       libgit2-sys = old: {
-        nativeBuildInputs = (old.nativeBuildInputs or []) ++ pkgs.libgit2.nativeBuildInputs;
-        buildInputs = (old.buildInputs or []) ++ pkgs.libgit2.buildInputs;
+        nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ pkgs.libgit2.nativeBuildInputs;
+        buildInputs = (old.buildInputs or [ ]) ++ pkgs.libgit2.buildInputs;
         propagatedBuildInputs = (old.propagatedBuildInputs or [ ]) ++ pkgs.libgit2.propagatedBuildInputs;
       };
     };

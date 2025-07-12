@@ -1,0 +1,12 @@
+[package]
+name = "datafusion-test"
+version = "0.1.0"
+authors = ["Martin Jesper Low Madsen <martnjlowm@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+datafusion = { version = "46", default-features = false, features = [
+  "array_expressions",
+  "datetime_expressions",
+] }
+datafusion-functions = { version = "46", default-features = false }
