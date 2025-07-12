@@ -17,6 +17,7 @@
 , defaultCrateOverrides ? pkgs.defaultCrateOverrides
 , nix ? pkgs.nix
 , cargo ? pkgs.cargo
+, libsecret ? pkgs.libsecret
 , callPackage ? pkgs.callPackage
 , nix-prefetch-git ? pkgs.nix-prefetch-git
   # Seperate arguements that are NOT filled by callPackage.
@@ -37,7 +38,7 @@ let
       baseName = builtins.baseNameOf (builtins.toString name);
     in
       !(baseName == "templates" && type == "directory");
-  crate2nix = cargoNix.rootCrate.build.override {
+  crate2nix = (cargoNix.rootCrate.build.override {
     testCrateFlags = [
       "--skip nix_integration_tests"
     ];
@@ -63,7 +64,11 @@ let
         propagatedBuildInputs = (old.propagatedBuildInputs or [ ]) ++ pkgs.libgit2.propagatedBuildInputs;
       };
     };
-  };
+  }).overrideAttrs (attrs: {
+    postInstall = lib.optionalString stdenv.isLinux ''
+      patchelf --add-needed ${libsecret}/lib/libsecret-1.so.0 $out/bin/crate2nix
+    '';
+  });
   set_templates = if release then "" else "--set TEMPLATES_DIR ${./templates}";
 in
 symlinkJoin {
