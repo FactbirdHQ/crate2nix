@@ -349,6 +349,7 @@
           self;
         buildByPackageIdForPkgsImpl = self: pkgs: packageId:
           let
+            isTargetBuild = !(crateConfigs.${packageId}.procMacro or false);
             features = mergedFeatures."${packageId}" or [ ];
             crateConfig' = crateConfigs."${packageId}";
             crateConfig = builtins.removeAttrs crateConfig' [
@@ -431,6 +432,7 @@
                 buildDependencies
                 crateRenames
                 release
+                isTargetBuild
                 ;
             }
           );
