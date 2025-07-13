@@ -87,6 +87,10 @@ rec {
           ln -s "${src}/crate2nix-sources" "$out/crate2nix-sources"
         fi
 
+        echo ${pkgs.hostPlatform.system}
+        echo ${pkgs.buildPlatform.system}
+
+        cargo --help
         set -x
 
         crate2nix generate \
