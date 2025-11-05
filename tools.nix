@@ -477,7 +477,7 @@ in rec {
             isWorkspace = rootCargo ? "workspace";
             isPackage = rootCargo ? "package";
             containedCrates = lib.debug.traceVal (lib.flatten (builtins.map (pathsFromPathPattern src) rootCargo.workspace.members)
-              ++ (lib.flatten (builtins.map (pathsFromPathPattern src) rootCargo.workspace.exclude ? []))
+              ++ (lib.flatten (builtins.map (pathsFromPathPattern src) rootCargo.workspace.exclude or []))
               ++ (
                 if isPackage
                 then ["."]
