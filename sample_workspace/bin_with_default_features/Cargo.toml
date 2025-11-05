@@ -5,7 +5,8 @@ authors = ["Peter Kolloch <info@eigenvalue.net>"]
 edition = "2018"
 
 [dependencies]
-"hello_world_lib" = { path = "../lib", optional = true}
+"hello_world_lib" = { path = "../lib", optional = true }
+"excluded_hello_world_bin" = { path = "../exclude", optional = true }
 
 [features]
 default = ["use_lib"]

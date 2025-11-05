@@ -8,3 +8,7 @@ members = [
     "bin_with_cond_lib_dep",
     "with_tera",
 ]
+
+exclude = [
+  "exclude"
+]
