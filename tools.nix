@@ -55,7 +55,7 @@ rec {
     stdenv.mkDerivation {
       name = "${name}-crate2nix";
 
-      buildInputs = [ pkgs.cargo pkgs.jq crate2nix ];
+      buildInputs = [ pkgs.cargo pkgs.jq crate2nix pkgs.openssh ];
       preferLocalBuild = true;
 
       inherit src;
