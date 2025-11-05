@@ -476,13 +476,8 @@ in rec {
             rootCargo = builtins.fromTOML (builtins.readFile "${src}/Cargo.toml");
             isWorkspace = rootCargo ? "workspace";
             isPackage = rootCargo ? "package";
-            hasExclusions = (lib.debug.traceVal rootCargo) ? "exclude";
             containedCrates = lib.debug.traceVal (lib.flatten (builtins.map (pathsFromPathPattern src) rootCargo.workspace.members)
-              ++ (
-                if hasExclusions
-                then (lib.flatten (builtins.map (pathsFromPathPattern src) rootCargo.workspace.exclude))
-                else []
-              )
+              ++ (lib.flatten (builtins.map (pathsFromPathPattern src) rootCargo.workspace.exclude ? []))
               ++ (
                 if isPackage
                 then ["."]
