@@ -303,33 +303,29 @@ rec {
 
   /*
     Returns an attr set with packageId mapped to the result of buildRustCrateForPkgsFunc
-    for the corresponding crate.
+    for the corresponding crate, using pre-computed merged features.
+
+    Unlike builtRustCratesWithFeatures which resolves features from a single
+    root package, this function accepts an already-resolved feature map. This
+    enables workspace-unified builds where all members share a single crate
+    graph, reducing per-crate derivation count from O(N*M) to O(M).
+
+    The mergedFeatures parameter is typically produced by
+    mergeWorkspaceMemberFeatures or mergePackageFeatures.
   */
-  builtRustCratesWithFeatures =
-    { packageId
-    , features
+  builtRustCratesWithMergedFeatures =
+    { mergedFeatures
     , crateConfigs ? crates
     , buildRustCrateForPkgsFunc
-    , runTests
+    , runTests ? false
+    , rootPackageId ? null
     , makeTarget ? makeDefaultTarget
     ,
-    }@args:
+    }:
+      assert (builtins.isAttrs mergedFeatures);
       assert (builtins.isAttrs crateConfigs);
-      assert (builtins.isString packageId);
-      assert (builtins.isList features);
-      assert (builtins.isAttrs (makeTarget stdenv.hostPlatform));
       assert (builtins.isBool runTests);
       let
-        rootPackageId = packageId;
-        mergedFeatures = mergePackageFeatures (
-          args
-          // {
-            inherit rootPackageId;
-            target = makeTarget stdenv.hostPlatform // {
-              test = runTests;
-            };
-          }
-        );
         # Memoize built packages so that reappearing packages are only built once.
         builtByPackageIdByPkgs = mkBuiltByPackageIdByPkgs pkgs;
         mkBuiltByPackageIdByPkgs =
@@ -440,6 +436,45 @@ rec {
           );
       in
       builtByPackageIdByPkgs;
+
+  /*
+    Returns an attr set with packageId mapped to the result of buildRustCrateForPkgsFunc
+    for the corresponding crate.
+
+    Resolves features from a single root package via mergePackageFeatures,
+    then delegates to builtRustCratesWithMergedFeatures. For workspace-unified
+    builds, prefer calling builtRustCratesWithMergedFeatures directly with
+    features from mergeWorkspaceMemberFeatures.
+  */
+  builtRustCratesWithFeatures =
+    { packageId
+    , features
+    , crateConfigs ? crates
+    , buildRustCrateForPkgsFunc
+    , runTests
+    , makeTarget ? makeDefaultTarget
+    ,
+    }@args:
+      assert (builtins.isAttrs crateConfigs);
+      assert (builtins.isString packageId);
+      assert (builtins.isList features);
+      assert (builtins.isAttrs (makeTarget stdenv.hostPlatform));
+      assert (builtins.isBool runTests);
+      let
+        mergedFeatures = mergePackageFeatures (
+          args
+          // {
+            rootPackageId = packageId;
+            target = makeTarget stdenv.hostPlatform // {
+              test = runTests;
+            };
+          }
+        );
+      in
+      builtRustCratesWithMergedFeatures {
+        inherit mergedFeatures crateConfigs buildRustCrateForPkgsFunc runTests makeTarget;
+        rootPackageId = packageId;
+      };
 
   # Returns the actual derivations for the given dependencies.
   dependencyDerivations =
@@ -645,6 +680,50 @@ rec {
         );
       in
       cacheWithAll;
+
+  /*
+    Computes the union of resolved features across multiple root packages.
+
+    This is useful for workspace builds where you want all members to share
+    a single crate graph: each crate is built once with the union of features
+    required by any workspace member that (transitively) depends on it.
+
+    This matches `cargo build --workspace` feature unification and reduces
+    per-crate derivation count from O(N*M) to O(M), where N is the number
+    of workspace members and M is the number of unique crates.
+
+    Returns an attrset mapping packageId to the sorted unique list of features.
+  */
+  mergeWorkspaceMemberFeatures =
+    { rootPackageIds
+    , crateConfigs ? crates
+    , target
+    , runTests ? false
+    ,
+    }:
+      assert (builtins.isList rootPackageIds);
+      assert (builtins.isAttrs crateConfigs);
+      assert (builtins.isAttrs target);
+      assert (builtins.isBool runTests);
+      let
+        perRootFeatures = map (rootId:
+          mergePackageFeatures {
+            packageId = rootId;
+            rootPackageId = rootId;
+            inherit crateConfigs target runTests;
+            features = [ "default" ];
+          }
+        ) rootPackageIds;
+        mergeTwoFeatureSets = a: b:
+          let
+            allKeys = builtins.attrNames (a // b);
+          in
+          builtins.listToAttrs (map (key: {
+            name = key;
+            value = sortedUnique ((a.${key} or [ ]) ++ (b.${key} or [ ]));
+          }) allKeys);
+      in
+      builtins.foldl' mergeTwoFeatureSets { } perRootFeatures;
 
   # Returns the enabled dependencies given the enabled features.
   filterEnabledDependencies =
