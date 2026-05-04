@@ -318,7 +318,7 @@ rec {
     , crateConfigs ? crates
     , buildRustCrateForPkgsFunc
     , runTests ? false
-    , rootPackageId ? null
+    , rootPackageIds ? []
     , makeTarget ? makeDefaultTarget
     ,
     }:
@@ -351,7 +351,7 @@ rec {
               "resolvedDefaultFeatures"
               "devDependencies"
             ];
-            devDependencies = lib.optionals (runTests && packageId == rootPackageId) (
+            devDependencies = lib.optionals (runTests && builtins.elem packageId rootPackageIds) (
               crateConfig'.devDependencies or [ ]
             );
             dependencies = dependencyDerivations {
@@ -473,7 +473,7 @@ rec {
       in
       builtRustCratesWithMergedFeatures {
         inherit mergedFeatures crateConfigs buildRustCrateForPkgsFunc runTests makeTarget;
-        rootPackageId = packageId;
+        rootPackageIds = [ packageId ];
       };
 
   # Returns the actual derivations for the given dependencies.
